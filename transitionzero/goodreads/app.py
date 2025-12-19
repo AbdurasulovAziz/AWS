@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter
+from transitionzero.goodreads.controllers.books import router as books_router
 
 router = APIRouter()
 
@@ -8,3 +9,4 @@ def health():
 
 app = FastAPI(title="tz_goodreads")
 app.include_router(router)
+app.include_router(books_router)
