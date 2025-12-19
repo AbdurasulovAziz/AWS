@@ -1,37 +1,43 @@
-from fastapi import HTTPException
-from sqlalchemy import select, update
+
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from transitionzero.goodreads.models.database import Book
+from transitionzero.goodreads.services.books import service_books
+from transitionzero.goodreads.models.database import get_db
+from transitionzero.goodreads.schemas.books import BookSchema, BookSchemaBase
 
+router = APIRouter()
 
-class ServiceBooks:
+@router.get("/books", response_model=list[BookSchema])
+def get_books(
+        session: Session = Depends(get_db)):
+    return service_books.get(session)
 
-    def search(self, db: Session, user_id: int):
-        obj = db.execute(select(Book).where(Book.id == user_id)).scalar()
-        if not obj:
-            raise HTTPException(status_code=404, detail="Book not found")
+@router.get("/search/{book_id}", response_model=BookSchema)
+def get_book_by_id(
+        book_id: int,
+        session: Session = Depends(get_db)
+):
+    return service_books.search(session, book_id)
 
-        return obj
+@router.post("/books", response_model=BookSchema)
+def create_book(
+        book: BookSchemaBase,
+        session: Session = Depends(get_db)
+):
+    return service_books.post(session, book.model_dump())
 
-    def get(self, db: Session):
-        return db.execute(select(Book)).scalars().all()
+@router.patch("/books/{book_id}")
+def patch_book(
+        book_id: int,
+        book: BookSchemaBase,
+        session: Session = Depends(get_db)
+):
+    return service_books.patch(session, book_id, book.model_dump(exclude_unset=True))
 
-    def post(self, db: Session, data: dict):
-        new_book = Book(**data)
-        db.add(new_book)
-        db.commit()
-        db.refresh(new_book)
-        return new_book
-
-    def patch(self, db: Session, book_id: int, data: dict):
-        db.execute(update(Book).where(Book.id == book_id).values(**data))
-        db.commit()
-
-
-    def delete(self, db: Session, book_id: int):
-        obj = self.search(db, book_id)
-        db.delete(obj)
-        db.commit()
-
-service_books = ServiceBooks()
+@router.delete("/books/{book_id}")
+def delete_book(
+        book_id: int,
+        session: Session = Depends(get_db)
+):
+    return service_books.delete(session, book_id)

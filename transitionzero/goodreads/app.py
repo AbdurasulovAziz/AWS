@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter
-from transitionzero.goodreads.views.books import router as books_router
+from transitionzero.goodreads.controllers.books import router as books_router
 
 router = APIRouter()
 
